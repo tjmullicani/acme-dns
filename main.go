@@ -13,7 +13,7 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/caddyserver/certmagic"
+	"github.com/tjmullicani/certmagic"
 	legolog "github.com/go-acme/lego/v3/log"
 	"github.com/julienschmidt/httprouter"
 	"github.com/rs/cors"
@@ -135,15 +135,12 @@ func startHTTPAPI(errChan chan error, config DNSConfig, dnsservers []*DNSServer)
 	cfg := &tls.Config{
 		MinVersion: tls.VersionTLS12,
 		CurvePreferences: []tls.CurveID{
-			// unable to use P384 due to certmagic newAccount() hard-coded function
-			tls.CurveP256,
+			tls.CurveP384,
 		},
 		CipherSuites: []uint16{
-			// unable to use P384 due to certmagic newAccount() hard-coded function
-			tls.TLS_AES_128_GCM_SHA256,
 			tls.TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,
-			tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
-			tls.TLS_RSA_WITH_AES_128_GCM_SHA256,
+			tls.TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,
+			tls.TLS_AES_256_GCM_SHA384,
 		},
 		PreferServerCipherSuites: true,
 	}
