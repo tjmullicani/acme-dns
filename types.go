@@ -47,6 +47,7 @@ type httpapi struct {
 	TLS                 string
 	TLSCertPrivkey      string `toml:"tls_cert_privkey"`
 	TLSCertFullchain    string `toml:"tls_cert_fullchain"`
+	ACMEDomain          string `toml:"acme_domain"`
 	ACMECacheDir        string `toml:"acme_cache_dir"`
 	NotificationEmail   string `toml:"notification_email"`
 	CorsOrigins         []string

@@ -134,6 +134,18 @@ func startHTTPAPI(errChan chan error, config DNSConfig, dnsservers []*DNSServer)
 	// TLS specific general settings
 	cfg := &tls.Config{
 		MinVersion: tls.VersionTLS12,
+		CurvePreferences: []tls.CurveID{
+			// unable to use P384 due to certmagic newAccount() hard-coded function
+			tls.CurveP256,
+		},
+		CipherSuites: []uint16{
+			// unable to use P384 due to certmagic newAccount() hard-coded function
+			tls.TLS_AES_128_GCM_SHA256,
+			tls.TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,
+			tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
+			tls.TLS_RSA_WITH_AES_128_GCM_SHA256,
+		},
+		PreferServerCipherSuites: true,
 	}
 	provider := NewChallengeProvider(dnsservers)
 	storage := certmagic.FileStorage{Path: Config.API.ACMECacheDir}
@@ -145,6 +157,9 @@ func startHTTPAPI(errChan chan error, config DNSConfig, dnsservers []*DNSServer)
 		certmagic.DefaultACME.CA = certmagic.LetsEncryptProductionCA
 	} else {
 		certmagic.DefaultACME.CA = certmagic.LetsEncryptStagingCA
+	}
+	if Config.API.TLS == "custom" {
+		certmagic.DefaultACME.CA = Config.API.ACMEDomain
 	}
 	certmagic.DefaultACME.Email = Config.API.NotificationEmail
 	magicConf := certmagic.NewDefault()
@@ -176,7 +191,7 @@ func startHTTPAPI(errChan chan error, config DNSConfig, dnsservers []*DNSServer)
 		}
 		log.WithFields(log.Fields{"host": host, "domain": Config.General.Domain}).Info("Listening HTTPS")
 		err = srv.ListenAndServeTLS("", "")
-	case "letsencrypt":
+	case "letsencrypt", "custom":
 		err = magic.ManageAsync(context.Background(), []string{Config.General.Domain})
 		if err != nil {
 			errChan <- err
