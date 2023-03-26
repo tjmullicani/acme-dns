@@ -37,6 +37,14 @@ type dbsettings struct {
 	Connection string
 }
 
+const (
+	TlsTypeLetsEncrypt        = "letsencrypt"
+	TlsTypeLetsEncryptStaging = "letsencryptstaging"
+	TlsTypeAcmeCustom         = "custom"
+	TlsTypeCert               = "cert"
+	TlsTypeNone               = "none"
+)
+
 // API config
 type httpapi struct {
 	Domain              string `toml:"api_domain"`
@@ -47,8 +55,8 @@ type httpapi struct {
 	TLS                 string
 	TLSCertPrivkey      string `toml:"tls_cert_privkey"`
 	TLSCertFullchain    string `toml:"tls_cert_fullchain"`
-	ACMEDomain          string `toml:"acme_domain"`
 	ACMECacheDir        string `toml:"acme_cache_dir"`
+	ACMEDir             string `toml:"acme_dir"`
 	NotificationEmail   string `toml:"notification_email"`
 	CorsOrigins         []string
 	UseHeader           bool   `toml:"use_header"`

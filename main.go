@@ -150,13 +150,14 @@ func startHTTPAPI(errChan chan error, config DNSConfig, dnsservers []*DNSServer)
 	// Set up certmagic for getting certificate for acme-dns api
 	certmagic.DefaultACME.DNS01Solver = &provider
 	certmagic.DefaultACME.Agreed = true
-	if Config.API.TLS == "letsencrypt" {
+	switch config.API.TLS {
+	case TlsTypeLetsEncrypt:
 		certmagic.DefaultACME.CA = certmagic.LetsEncryptProductionCA
-	} else {
+	case TlsTypeAcmeCustom:
+		certmagic.DefaultACME.CA = config.API.ACMEDir
+	case TlsTypeLetsEncryptStaging:
+	default:
 		certmagic.DefaultACME.CA = certmagic.LetsEncryptStagingCA
-	}
-	if Config.API.TLS == "custom" {
-		certmagic.DefaultACME.CA = Config.API.ACMEDomain
 	}
 	certmagic.DefaultACME.Email = Config.API.NotificationEmail
 	magicConf := certmagic.NewDefault()
@@ -171,25 +172,11 @@ func startHTTPAPI(errChan chan error, config DNSConfig, dnsservers []*DNSServer)
 
 	magic := certmagic.New(magicCache, *magicConf)
 	var err error
-	switch Config.API.TLS {
-	case "letsencryptstaging":
-		err = magic.ManageAsync(context.Background(), []string{Config.General.Domain})
-		if err != nil {
-			errChan <- err
-			return
-		}
-		cfg.GetCertificate = magic.GetCertificate
-
-		srv := &http.Server{
-			Addr:      host,
-			Handler:   c.Handler(api),
-			TLSConfig: cfg,
-			ErrorLog:  stdlog.New(logwriter, "", 0),
-		}
-		log.WithFields(log.Fields{"host": host, "domain": Config.General.Domain}).Info("Listening HTTPS")
-		err = srv.ListenAndServeTLS("", "")
-	case "letsencrypt", "custom":
-		err = magic.ManageAsync(context.Background(), []string{Config.General.Domain})
+	switch config.API.TLS {
+	case TlsTypeLetsEncrypt:
+	case TlsTypeLetsEncryptStaging:
+	case TlsTypeAcmeCustom:
+		err = magic.ManageAsync(context.Background(), []string{config.General.Domain})
 		if err != nil {
 			errChan <- err
 			return
@@ -202,8 +189,9 @@ func startHTTPAPI(errChan chan error, config DNSConfig, dnsservers []*DNSServer)
 			ErrorLog:  stdlog.New(logwriter, "", 0),
 		}
 		log.WithFields(log.Fields{"host": host, "domain": Config.General.Domain}).Info("Listening HTTPS")
+		log.WithFields(log.Fields{"host": host, "domain": config.General.Domain}).Info("Listening HTTPS")
 		err = srv.ListenAndServeTLS("", "")
-	case "cert":
+	case TlsTypeCert:
 		srv := &http.Server{
 			Addr:      host,
 			Handler:   c.Handler(api),
@@ -212,6 +200,7 @@ func startHTTPAPI(errChan chan error, config DNSConfig, dnsservers []*DNSServer)
 		}
 		log.WithFields(log.Fields{"host": host}).Info("Listening HTTPS")
 		err = srv.ListenAndServeTLS(Config.API.TLSCertFullchain, Config.API.TLSCertPrivkey)
+		err = srv.ListenAndServeTLS(config.API.TLSCertFullchain, config.API.TLSCertPrivkey)
 	default:
 		log.WithFields(log.Fields{"host": host}).Info("Listening HTTP")
 		err = http.ListenAndServe(host, c.Handler(api))
