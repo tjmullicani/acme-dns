@@ -27,13 +27,12 @@ func main() {
 	flag.Parse()
 	// Read global config
 	var err error
-	var readConfigLog string
 	if fileIsAccessible(*configPtr) {
+		log.WithFields(log.Fields{"file": *configPtr}).Info("Using config file")
 		Config, err = readConfig(*configPtr)
-		readConfigLog = *configPtr
 	} else if fileIsAccessible("./config.cfg") {
+		log.WithFields(log.Fields{"file": "./config.cfg"}).Info("Using config file")
 		Config, err = readConfig("./config.cfg")
-		readConfigLog = "./config.cfg"
 	} else {
 		log.Errorf("Configuration file not found.")
 		os.Exit(1)
@@ -43,7 +42,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	setupLogging(Config.Logconfig, readConfigLog)
+	setupLogging(Config.Logconfig.Format, Config.Logconfig.Level)
 
 	// Open database
 	newDB := new(acmedb)
@@ -105,12 +104,12 @@ func main() {
 func startHTTPAPI(errChan chan error, config DNSConfig, dnsservers []*DNSServer) {
 	// Setup http logger
 	logger := log.New()
-	setupHTTPLogging(logger, config.Logconfig)
 	logwriter := logger.Writer()
 	defer logwriter.Close()
 	// Setup logging for different dependencies to log with logrus
 	// Certmagic
 	stdlog.SetOutput(logwriter)
+	certmagic.Logger = logger
 	// Lego
 	legolog.Logger = logger
 
@@ -189,7 +188,7 @@ func startHTTPAPI(errChan chan error, config DNSConfig, dnsservers []*DNSServer)
 			Addr:      host,
 			Handler:   c.Handler(api),
 			TLSConfig: cfg,
-			ErrorLog:  stdlog,
+			ErrorLog:  stdlog.New(logwriter, "", 0),
 		}
 		log.WithFields(log.Fields{"host": host, "domain": Config.General.Domain}).Info("Listening HTTPS")
 		log.WithFields(log.Fields{"host": host, "domain": config.General.Domain}).Info("Listening HTTPS")
@@ -199,7 +198,7 @@ func startHTTPAPI(errChan chan error, config DNSConfig, dnsservers []*DNSServer)
 			Addr:      host,
 			Handler:   c.Handler(api),
 			TLSConfig: cfg,
-			ErrorLog:  stdlog,
+			ErrorLog:  stdlog.New(logwriter, "", 0),
 		}
 		log.WithFields(log.Fields{"host": host}).Info("Listening HTTPS")
 		err = srv.ListenAndServeTLS(Config.API.TLSCertFullchain, Config.API.TLSCertPrivkey)
