@@ -42,7 +42,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	setupLogging(Config.Logconfig.Format, Config.Logconfig.Level)
+	setupLogging(Config.Logconfig, readConfigLog)
 
 	// Open database
 	newDB := new(acmedb)
