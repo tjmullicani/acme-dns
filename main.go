@@ -109,7 +109,6 @@ func startHTTPAPI(errChan chan error, config DNSConfig, dnsservers []*DNSServer)
 	// Setup logging for different dependencies to log with logrus
 	// Certmagic
 	stdlog.SetOutput(logwriter)
-	certmagic.Logger = logger
 	// Lego
 	legolog.Logger = logger
 
@@ -163,6 +162,7 @@ func startHTTPAPI(errChan chan error, config DNSConfig, dnsservers []*DNSServer)
 	}
 	certmagic.DefaultACME.Email = Config.API.NotificationEmail
 	magicConf := certmagic.NewDefault()
+	magicConf.Logger = logger
 	magicConf.Storage = &storage
 	magicConf.DefaultServerName = Config.General.Domain
 
