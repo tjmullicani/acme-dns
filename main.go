@@ -189,7 +189,7 @@ func startHTTPAPI(errChan chan error, config DNSConfig, dnsservers []*DNSServer)
 			Addr:      host,
 			Handler:   c.Handler(api),
 			TLSConfig: cfg,
-			ErrorLog:  stdlog.New(logwriter, "", 0),
+			ErrorLog:  stdlog,
 		}
 		log.WithFields(log.Fields{"host": host, "domain": Config.General.Domain}).Info("Listening HTTPS")
 		log.WithFields(log.Fields{"host": host, "domain": config.General.Domain}).Info("Listening HTTPS")
@@ -199,7 +199,7 @@ func startHTTPAPI(errChan chan error, config DNSConfig, dnsservers []*DNSServer)
 			Addr:      host,
 			Handler:   c.Handler(api),
 			TLSConfig: cfg,
-			ErrorLog:  stdlog.New(logwriter, "", 0),
+			ErrorLog:  stdlog,
 		}
 		log.WithFields(log.Fields{"host": host}).Info("Listening HTTPS")
 		err = srv.ListenAndServeTLS(Config.API.TLSCertFullchain, Config.API.TLSCertPrivkey)
