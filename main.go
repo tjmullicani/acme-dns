@@ -27,6 +27,7 @@ func main() {
 	flag.Parse()
 	// Read global config
 	var err error
+	var readConfigLog string
 	if fileIsAccessible(*configPtr) {
 		log.WithFields(log.Fields{"file": *configPtr}).Info("Using config file")
 		Config, err = readConfig(*configPtr)
@@ -104,6 +105,7 @@ func main() {
 func startHTTPAPI(errChan chan error, config DNSConfig, dnsservers []*DNSServer) {
 	// Setup http logger
 	logger := log.New()
+	setupHTTPLogging(logger, config.Logconfig)
 	logwriter := logger.Writer()
 	defer logwriter.Close()
 	// Setup logging for different dependencies to log with logrus
